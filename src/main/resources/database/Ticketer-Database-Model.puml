@@ -1,0 +1,97 @@
+@startuml
+!theme plain
+
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor white
+    BorderColor black
+    ArrowColor black
+}
+
+package "Entities (JPA)" {
+    class Ticket {
+        - Long id
+        - String title
+        - String description
+        - TicketStatus status
+        - Priority priority
+        - LocalDateTime createdAt
+        - LocalDateTime updatedAt
+        - User createdBy
+        - User assignedTo
+        - Category category
+        - List<Comment> comments
+        --
+        + Ticket()
+        + getters/setters
+    }
+
+    class User {
+        - Long id
+        - String username
+        - String email
+        - String password
+        - String firstName
+        - String lastName
+        - Role role
+        - Boolean active
+        - LocalDateTime createdAt
+        -
+        + User()
+        + getters/setters
+    }
+
+    class Category {
+        - Long id
+        - String name
+        - String description
+        - Category parentCategory
+        - List<Category> subCategories
+        -
+        + Category()
+        + getters/setters
+    }
+
+    class Comment {
+        - Long id
+        - String content
+        - LocalDateTime createdAt
+        - User author
+        - Ticket ticket
+        -
+        + Comment()
+        + getters/setters
+    }
+
+    enum TicketStatus {
+        NEW
+        IN_PROGRESS
+        RESOLVED
+        CLOSED
+        REOPENED
+    }
+
+    enum Priority {
+        LOW
+        MEDIUM
+        HIGH
+        CRITICAL
+    }
+
+    enum Role {
+        ADMIN
+        SUPPORT
+        USER
+    }
+}
+
+Ticket "1" -- "1..*" Comment : has >
+Ticket "1" --o "1" User : created by >
+Ticket "1" --o "1" User : assigned to >
+Ticket "1" -- "1" Category : belongs to >
+User "1" -- "0..*" Ticket : created >
+User "1" -- "0..*" Ticket : assigned >
+User "1" -- "0..*" Comment : wrote >
+Category "1" --o "0..*" Category : parent >
+
+@enduml
