@@ -21,6 +21,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -113,6 +116,11 @@ class TroubleTicketServiceTest {
 
         var expectedResponse = new TroubleTicketResponse("EXT-001", 123L, "Test description", "acknowledged", null, null, null);
 
+        // Setup mock web context for ServletUriComponentsBuilder
+        MockHttpServletRequest requestMock = new MockHttpServletRequest();
+        requestMock.setServletPath("/api/v1/troubleTicket");
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(requestMock));
+
         when(tenantRepository.findById(TEST_TENANT)).thenReturn(Optional.of(tenant));
         when(troubleTicketRepository.findByExternalIdAndTenant("EXT-001", tenant)).thenReturn(Optional.of(existingTicket));
         when(mapper.toResponse(existingTicket)).thenReturn(expectedResponse);
@@ -124,7 +132,7 @@ class TroubleTicketServiceTest {
         assertNotNull(result);
         assertNotNull(result.getBody());
         assertEquals("EXT-001", result.getBody().externalId());
-        assertEquals(200, result.getStatusCodeValue()); // OK status for idempotent response
+        assertEquals(200, result.getStatusCode().value()); // OK status for idempotent response
         verify(troubleTicketRepository, never()).save(any());
         verify(noteService, never()).addNoteToTicket(anyString(), any(NoteCreateRequest.class), anyString());
     }
