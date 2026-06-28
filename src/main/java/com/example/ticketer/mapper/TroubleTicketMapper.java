@@ -25,7 +25,6 @@ public interface TroubleTicketMapper {
         return TicketStatus.valueOf(status.toUpperCase());
     }
 
-    @Mapping(target = "id", source = "troubleTicket.id")
     @Mapping(target = "notes", source = "troubleTicket.notes")
     TroubleTicketResponse toResponse(TroubleTicketEntity troubleTicket);
 

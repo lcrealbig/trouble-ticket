@@ -2,7 +2,6 @@ package com.example.ticketer.service;
 
 import com.example.ticketer.dto.*;
 import com.example.ticketer.exception.BadRequestException;
-import com.example.ticketer.exception.TenantNotFoundException;
 import com.example.ticketer.exception.TroubleTicketNotFoundException;
 import com.example.ticketer.exception.UnauthorizedException;
 import com.example.ticketer.mapper.TroubleTicketMapper;
@@ -66,18 +65,18 @@ class TroubleTicketServiceTest {
     @Test
     void createTroubleTicket_ShouldCreateNewTicketSuccessfully() {
         // Given
-        TroubleTicketCreateRequest request = new TroubleTicketCreateRequest("EXT-001", 123L, "Test description", "new", "Test note");
+        var request = new TroubleTicketCreateRequest("EXT-001", 123L, "Test description", "new", "Test note");
 
-        TenantEntity tenant = new TenantEntity();
+        var tenant = new TenantEntity();
         tenant.setId(TEST_TENANT);
         tenant.setName("Test Tenant");
 
-        TroubleTicketEntity expectedTicket = new TroubleTicketEntity();
+        var expectedTicket = new TroubleTicketEntity();
         expectedTicket.setId(1L);
         expectedTicket.setExternalId("EXT-001");
         expectedTicket.setTenant(tenant);
 
-        TroubleTicketResponse expectedResponse = new TroubleTicketResponse("1", "EXT-001", 123L, "Test description", "new", null, null, null);
+        var expectedResponse = new TroubleTicketResponse( "EXT-001", 123L, "Test description", "new", null, null, null);
 
         when(tenantRepository.findById(TEST_TENANT)).thenReturn(Optional.of(tenant));
         when(troubleTicketRepository.findByExternalIdAndTenant("EXT-001", tenant)).thenReturn(Optional.empty());
@@ -87,54 +86,55 @@ class TroubleTicketServiceTest {
         when(noteService.addNoteToTicket(anyString(), any(NoteCreateRequest.class), anyString())).thenReturn(new NoteResponse(1L, "Test note", OffsetDateTime.now(), OffsetDateTime.now()));
 
         // When
-        TroubleTicketResponse result = troubleTicketService.createTroubleTicket(request);
+        var result = troubleTicketService.createTroubleTicket(request);
 
         // Then
         assertNotNull(result);
-        assertEquals("1", result.id());
-        assertEquals("EXT-001", result.externalId());
+        assertNotNull(result.getBody());
+        assertEquals("EXT-001", result.getBody().externalId());
         verify(troubleTicketRepository, times(1)).save(expectedTicket);
         verify(noteService, times(1)).addNoteToTicket(anyString(), any(NoteCreateRequest.class), anyString());
     }
 
+  
     @Test
-    void createTroubleTicket_ShouldReturnExistingForIdempotency() {
+    void createTroubleTicket_ShouldBeIdempotent() {
         // Given
-        TroubleTicketCreateRequest request = new TroubleTicketCreateRequest("EXT-001", 123L, "Test description", "new", "Test note");
+        var request = new TroubleTicketCreateRequest("EXT-001", 123L, "Test description", "new", "Test note");
 
-        TenantEntity tenant = new TenantEntity();
+        var tenant = new TenantEntity();
         tenant.setId(TEST_TENANT);
         tenant.setName("Test Tenant");
 
-        TroubleTicketEntity existing = new TroubleTicketEntity();
-        existing.setId(1L);
-        existing.setExternalId("EXT-001");
-        existing.setTenant(tenant);
+        var existingTicket = new TroubleTicketEntity();
+        existingTicket.setId(1L);
+        existingTicket.setExternalId("EXT-001");
+        existingTicket.setTenant(tenant);
 
-        TroubleTicketResponse response = new TroubleTicketResponse("1", "EXT-001", 123L, "Test description", "acknowledged", null, null, null);
+        var expectedResponse = new TroubleTicketResponse("EXT-001", 123L, "Test description", "acknowledged", null, null, null);
 
         when(tenantRepository.findById(TEST_TENANT)).thenReturn(Optional.of(tenant));
-        when(troubleTicketRepository.findByExternalIdAndTenant("EXT-001", tenant))
-                .thenReturn(Optional.of(existing));
-        when(mapper.toResponse(existing)).thenReturn(response);
+        when(troubleTicketRepository.findByExternalIdAndTenant("EXT-001", tenant)).thenReturn(Optional.of(existingTicket));
+        when(mapper.toResponse(existingTicket)).thenReturn(expectedResponse);
 
         // When
-        TroubleTicketResponse result = troubleTicketService.createTroubleTicket(request);
+        var result = troubleTicketService.createTroubleTicket(request);
 
         // Then
         assertNotNull(result);
-        assertEquals("1", result.id());
-        assertEquals("EXT-001", result.externalId());
-        assertEquals("acknowledged", result.status());
+        assertNotNull(result.getBody());
+        assertEquals("EXT-001", result.getBody().externalId());
+        assertEquals(200, result.getStatusCodeValue()); // OK status for idempotent response
         verify(troubleTicketRepository, never()).save(any());
+        verify(noteService, never()).addNoteToTicket(anyString(), any(NoteCreateRequest.class), anyString());
     }
 
     @Test
     void createTroubleTicket_ShouldThrowForInvalidStatus() {
         // Given
-        TroubleTicketCreateRequest request = new TroubleTicketCreateRequest("EXT-001", 123L, "Test description", "closed", "Test note");
+        var request = new TroubleTicketCreateRequest("EXT-001", 123L, "Test description", "closed", "Test note");
 
-        TenantEntity tenant = new TenantEntity();
+        var tenant = new TenantEntity();
         tenant.setId(TEST_TENANT);
 
         when(tenantRepository.findById(TEST_TENANT)).thenReturn(Optional.of(tenant));
@@ -149,7 +149,7 @@ class TroubleTicketServiceTest {
     @Test
     void createTroubleTicket_ShouldThrowWhenTenantNotFound() {
         // Given
-        TroubleTicketCreateRequest request = new TroubleTicketCreateRequest("EXT-001", 123L, "Test description", "new", "Test note");
+        var request = new TroubleTicketCreateRequest("EXT-001", 123L, "Test description", "new", "Test note");
 
         when(tenantRepository.findById(TEST_TENANT)).thenReturn(Optional.empty());
 
@@ -162,7 +162,7 @@ class TroubleTicketServiceTest {
     @Test
     void createTroubleTicket_ShouldThrowWhenTenantContextNotAvailable() {
         // Given
-        TroubleTicketCreateRequest request = new TroubleTicketCreateRequest("EXT-001", 123L, "Test description", "new", "Test note");
+        var request = new TroubleTicketCreateRequest("EXT-001", 123L, "Test description", "new", "Test note");
         when(tenantContext.getTenantId()).thenReturn(null);
 
         // When & Then
@@ -174,52 +174,51 @@ class TroubleTicketServiceTest {
     @Test
     void getTroubleTicketById_ShouldReturnTicketSuccessfully() {
         // Given
-        Long ticketId = 1L;
-        TenantEntity tenant = new TenantEntity();
+        var ticketId = 1L;
+        var tenant = new TenantEntity();
         tenant.setId(TEST_TENANT);
 
-        TroubleTicketEntity ticket = new TroubleTicketEntity();
+        var ticket = new TroubleTicketEntity();
         ticket.setId(ticketId);
         ticket.setExternalId("EXT-001");
         ticket.setTenant(tenant);
 
-        TroubleTicketResponse expectedResponse = new TroubleTicketResponse("1", "EXT-001", 123L, "Test description", "new", null, null, null);
+        var expectedResponse = new TroubleTicketResponse( "EXT-001", 123L, "Test description", "new", null, null, null);
 
         when(tenantRepository.findById(TEST_TENANT)).thenReturn(Optional.of(tenant));
         when(troubleTicketRepository.findByIdAndTenant(ticketId, tenant)).thenReturn(Optional.of(ticket));
         when(mapper.toResponse(ticket)).thenReturn(expectedResponse);
 
         // When
-        TroubleTicketResponse result = troubleTicketService.getTroubleTicketById(ticketId);
+        var result = troubleTicketService.getTroubleTicketById(ticketId);
 
         // Then
         assertNotNull(result);
-        assertEquals("1", result.id());
         assertEquals("EXT-001", result.externalId());
     }
 
     @Test
     void closeTroubleTicket_ShouldCloseTicketSuccessfully() {
         // Given
-        String externalId = "EXT-001";
+        var externalId = "EXT-001";
         TroubleTicketCloseStatusRequest request = new TroubleTicketCloseStatusRequest("closed");
 
-        TenantEntity tenant = new TenantEntity();
+        var tenant = new TenantEntity();
         tenant.setId(TEST_TENANT);
 
-        TroubleTicketEntity ticket = new TroubleTicketEntity();
+        var ticket = new TroubleTicketEntity();
         ticket.setId(1L);
         ticket.setExternalId(externalId);
         ticket.setStatus(TicketStatus.NEW);
         ticket.setTenant(tenant);
 
-        TroubleTicketEntity closedTicket = new TroubleTicketEntity();
+        var closedTicket = new TroubleTicketEntity();
         closedTicket.setId(1L);
         closedTicket.setExternalId(externalId);
         closedTicket.setStatus(TicketStatus.CLOSED);
         closedTicket.setTenant(tenant);
 
-        TroubleTicketResponse expectedResponse = new TroubleTicketResponse("1", externalId, null, null, "closed", null, null, null);
+        var expectedResponse = new TroubleTicketResponse( externalId, null, null, "closed", null, null, null);
 
         when(tenantRepository.findById(TEST_TENANT)).thenReturn(Optional.of(tenant));
         when(troubleTicketRepository.findByExternalIdAndTenant(externalId, tenant)).thenReturn(Optional.of(ticket));
@@ -227,7 +226,7 @@ class TroubleTicketServiceTest {
         when(mapper.toResponse(closedTicket)).thenReturn(expectedResponse);
 
         // When
-        TroubleTicketResponse result = troubleTicketService.closeTroubleTicket(externalId, request);
+        var result = troubleTicketService.closeTroubleTicket(externalId, request);
 
         // Then
         assertNotNull(result);
@@ -238,13 +237,13 @@ class TroubleTicketServiceTest {
     @Test
     void closeTroubleTicket_ShouldThrowWhenStatusNotClosed() {
         // Given
-        String externalId = "EXT-001";
+        var externalId = "EXT-001";
         TroubleTicketCloseStatusRequest request = new TroubleTicketCloseStatusRequest("resolved");
 
-        TenantEntity tenant = new TenantEntity();
+        var tenant = new TenantEntity();;
         tenant.setId(TEST_TENANT);
 
-        TroubleTicketEntity ticket = new TroubleTicketEntity();
+        var ticket = new TroubleTicketEntity();
         ticket.setId(1L);
         ticket.setExternalId(externalId);
         ticket.setTenant(tenant);
@@ -261,16 +260,16 @@ class TroubleTicketServiceTest {
     @Test
     void listTroubleTickets_ShouldReturnList() {
         // Given
-        TenantEntity tenant = new TenantEntity();
+        var tenant = new TenantEntity();;
         tenant.setId(TEST_TENANT);
         tenant.setName("Test Tenant");
 
-        TroubleTicketEntity ticket1 = new TroubleTicketEntity();
+        var ticket1 = new TroubleTicketEntity();
         ticket1.setId(1L);
         ticket1.setExternalId("EXT-001");
         ticket1.setTenant(tenant);
 
-        TroubleTicketEntity ticket2 = new TroubleTicketEntity();
+        var ticket2 = new TroubleTicketEntity();
         ticket2.setId(2L);
         ticket2.setExternalId("EXT-002");
         ticket2.setTenant(tenant);
@@ -320,7 +319,7 @@ class TroubleTicketServiceTest {
     @Test
     void closeTroubleTicket_ShouldThrowWhenTenantContextNotAvailable() {
         // Given
-        String externalId = "EXT-001";
+        var externalId = "EXT-001";
         TroubleTicketCloseStatusRequest request = new TroubleTicketCloseStatusRequest("closed");
         when(tenantContext.getTenantId()).thenReturn(null);
 
@@ -333,11 +332,11 @@ class TroubleTicketServiceTest {
     @Test
     void isExisting_ShouldReturnTrueWhenTicketExists() {
         // Given
-        String externalId = "EXT-001";
-        TenantEntity tenant = new TenantEntity();
+        var externalId = "EXT-001";
+        var tenant = new TenantEntity();
         tenant.setId(TEST_TENANT);
 
-        TroubleTicketEntity ticket = new TroubleTicketEntity();
+        var ticket = new TroubleTicketEntity();
         ticket.setExternalId(externalId);
         ticket.setTenant(tenant);
 
@@ -354,8 +353,8 @@ class TroubleTicketServiceTest {
     @Test
     void isExisting_ShouldReturnFalseWhenTicketNotExists() {
         // Given
-        String externalId = "EXT-999";
-        TenantEntity tenant = new TenantEntity();
+        var externalId = "EXT-999";
+        var tenant = new TenantEntity();
         tenant.setId(TEST_TENANT);
 
         when(tenantRepository.findById(TEST_TENANT)).thenReturn(Optional.of(tenant));
@@ -371,7 +370,7 @@ class TroubleTicketServiceTest {
     @Test
     void isExisting_ShouldReturnFalseWhenTenantContextNotAvailable() {
         // Given
-        String externalId = "EXT-001";
+        var externalId = "EXT-001";
         when(tenantContext.getTenantId()).thenReturn(null);
 
         // When
@@ -384,11 +383,11 @@ class TroubleTicketServiceTest {
     @Test
     void getTicketIdByExternalId_ShouldReturnIdSuccessfully() {
         // Given
-        String externalId = "EXT-001";
-        TenantEntity tenant = new TenantEntity();
+        var externalId = "EXT-001";
+        var tenant = new TenantEntity();
         tenant.setId(TEST_TENANT);
 
-        TroubleTicketEntity ticket = new TroubleTicketEntity();
+        var ticket = new TroubleTicketEntity();
         ticket.setId(123L);
         ticket.setExternalId(externalId);
         ticket.setTenant(tenant);
@@ -407,8 +406,8 @@ class TroubleTicketServiceTest {
     @Test
     void getTicketIdByExternalId_ShouldThrowWhenTicketNotFound() {
         // Given
-        String externalId = "EXT-999";
-        TenantEntity tenant = new TenantEntity();
+        var externalId = "EXT-999";
+        var tenant = new TenantEntity();
         tenant.setId(TEST_TENANT);
 
         when(tenantRepository.findById(TEST_TENANT)).thenReturn(Optional.of(tenant));
@@ -423,7 +422,7 @@ class TroubleTicketServiceTest {
     @Test
     void getTicketIdByExternalId_ShouldThrowWhenTenantContextNotAvailable() {
         // Given
-        String externalId = "EXT-001";
+        var externalId = "EXT-001";
         when(tenantContext.getTenantId()).thenReturn(null);
 
         // When & Then

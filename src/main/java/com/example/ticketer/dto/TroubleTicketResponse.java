@@ -7,7 +7,6 @@ import java.util.List;
 
 @Builder
 public record TroubleTicketResponse(
-        String id,
         String externalId,
         Long serviceId,
         String description,

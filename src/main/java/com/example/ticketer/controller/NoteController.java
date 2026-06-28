@@ -2,7 +2,9 @@ package com.example.ticketer.controller;
 
 import com.example.ticketer.dto.NoteCreateRequest;
 import com.example.ticketer.dto.NoteResponse;
+import com.example.ticketer.security.TenantContext;
 import com.example.ticketer.service.NoteService;
+import com.example.ticketer.service.TenantService;
 import com.example.ticketer.service.TroubleTicketService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,14 +19,14 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 public class NoteController {
 
     private final NoteService noteService;
-    private final TroubleTicketService troubleTicketService;
+    private final TenantContext tenantContext;
 
     @PostMapping("/{externalId}/note")
     public ResponseEntity<NoteResponse> addNoteToTicket(
             @PathVariable String externalId,
             @Valid @RequestBody NoteCreateRequest request
     ) {
-        var tenantId = troubleTicketService.getCurrentTenant();
+        var tenantId = tenantContext.getTenantId();
 
         var response = noteService.addNoteToTicket(externalId, request, tenantId);
 

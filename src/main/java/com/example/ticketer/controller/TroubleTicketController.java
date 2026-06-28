@@ -12,10 +12,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
 @RequestMapping("api/v1/troubleTicket")
@@ -31,23 +29,7 @@ public class TroubleTicketController {
             @Valid @RequestBody TroubleTicketCreateRequest request
     ) {
         log.info("Creating trouble ticket with externalId: {}", request.externalId());
-        var response = troubleTicketService.createTroubleTicket(request);
-
-        var location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{externalId}")
-                .buildAndExpand(response.externalId())
-                .toUri();
-
-        var isExisting = troubleTicketService.isExisting(response.externalId());
-
-        if (isExisting) {
-            return ResponseEntity.ok()
-                    .header("Location", location.toString())
-                    .body(response);
-        } else {
-            return ResponseEntity.created(location)
-                    .body(response);
-        }
+        return troubleTicketService.createTroubleTicket(request);
     }
 
     @GetMapping
@@ -56,7 +38,7 @@ public class TroubleTicketController {
             @RequestParam(defaultValue = "20") int size
     ) {
         log.info("Listing trouble tickets with pagination - page: {}, size: {}", page, size);
-        Pageable pageable = PageRequest.of(page, size);
+        var pageable = PageRequest.of(page, size);
         var summaries = troubleTicketService.listTroubleTickets(pageable);
         log.debug("Found {} trouble tickets", summaries.getTotalElements());
         return ResponseEntity.ok(summaries);
@@ -77,7 +59,7 @@ public class TroubleTicketController {
             @Valid @RequestBody TroubleTicketCloseStatusRequest request
     ) {
         log.info("Closing trouble ticket with externalId: {}, status: {}", externalId, request.status());
-        TroubleTicketResponse response = troubleTicketService.closeTroubleTicket(externalId, request);
+        var response = troubleTicketService.closeTroubleTicket(externalId, request);
         log.info("Successfully closed trouble ticket with externalId: {}", externalId);
         return ResponseEntity.ok(response);
     }
