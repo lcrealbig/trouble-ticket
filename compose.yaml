@@ -13,11 +13,20 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/trouble_ticket
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_FLYWAY_ENABLED=true
+      - SPRING_FLYWAY_BASELINE_ON_MIGRATE=true
+      - SPRING_FLYWAY_LOCATIONS=classpath:database/migration
 
       - JWT_SECRET=mySecretKeyForJWTTokenGenerationThatIsAtLeast256BitsLong12345
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
     networks:
       - trouble-ticket-network

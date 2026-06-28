@@ -9,89 +9,50 @@ skinparam class {
 }
 
 package "Entities (JPA)" {
-    class Ticket {
-        - Long id
-        - String title
-        - String description
-        - TicketStatus status
-        - Priority priority
-        - LocalDateTime createdAt
-        - LocalDateTime updatedAt
-        - User createdBy
-        - User assignedTo
-        - Category category
-        - List<Comment> comments
+    class TroubleTicket {
+        - Long id [PK, sequential]
+        - String externalId [not null, unique]
+        - Long serviceId [not null]
+        - String description [not null, TEXT]
+        - TroubleTicketStatus status [default=NEW]
+        - Long tenantId [FK, not null]
+        - OffsetDateTime createdAt [auto, not null]
+        - OffsetDateTime updatedAt [auto]
         --
-        + Ticket()
+        + addNote(Note note)
         + getters/setters
     }
 
-    class User {
-        - Long id
-        - String username
-        - String email
-        - String password
-        - String firstName
-        - String lastName
-        - Role role
-        - Boolean active
-        - LocalDateTime createdAt
-        -
-        + User()
+    class Note {
+        - Long id [PK, sequential]
+        - String text [not null, TEXT]
+        - OffsetDateTime createdAt [auto, not null]
+        - OffsetDateTime updatedAt [auto]
+        - Long troubleTicketId [FK, not null]
+        --
         + getters/setters
     }
 
-    class Category {
-        - Long id
-        - String name
-        - String description
-        - Category parentCategory
-        - List<Category> subCategories
-        -
-        + Category()
+    class Tenant {
+        - String id [PK, length=50]
+        - String name [not null, length=255]
+        - OffsetDateTime createdAt [auto, not null]
+        - OffsetDateTime updatedAt [auto]
+        --
         + getters/setters
     }
 
-    class Comment {
-        - Long id
-        - String content
-        - LocalDateTime createdAt
-        - User author
-        - Ticket ticket
-        -
-        + Comment()
-        + getters/setters
-    }
-
-    enum TicketStatus {
+    enum TroubleTicketStatus {
         NEW
+        ACKNOWLEDGED
         IN_PROGRESS
         RESOLVED
         CLOSED
-        REOPENED
-    }
-
-    enum Priority {
-        LOW
-        MEDIUM
-        HIGH
-        CRITICAL
-    }
-
-    enum Role {
-        ADMIN
-        SUPPORT
-        USER
+        REJECTED
     }
 }
 
-Ticket "1" -- "1..*" Comment : has >
-Ticket "1" --o "1" User : created by >
-Ticket "1" --o "1" User : assigned to >
-Ticket "1" -- "1" Category : belongs to >
-User "1" -- "0..*" Ticket : created >
-User "1" -- "0..*" Ticket : assigned >
-User "1" -- "0..*" Comment : wrote >
-Category "1" --o "0..*" Category : parent >
+TroubleTicket "1" --o "0..*" Note : has >
+Tenant "1" --o "0..*" TroubleTicket : owns >
 
 @enduml

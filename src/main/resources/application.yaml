@@ -5,10 +5,6 @@ spring:
     port: 8080
     servlet:
       context-path: /api/v1
-  flyway:
-    enabled: true
-    baseline-on-migrate: true
-    locations: classpath:database/migration
 management:
   endpoints:
     web:
@@ -24,7 +20,12 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
-
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:database/migration
+    schemas: public
+    validate-on-migrate: true
 logging:
   level:
     root: INFO

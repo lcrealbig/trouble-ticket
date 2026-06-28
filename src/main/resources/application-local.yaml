@@ -15,9 +15,3 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
-
-# Configure Flyway for local profile
-  flyway:
-    baseline-on-migrate: true
-    locations: classpath:database/migration
-
