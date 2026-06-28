@@ -1,1 +1,73 @@
-services: {}
+version: '3.8'
+
+services:
+  trouble-ticket-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: trouble-ticket-api
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=local
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/trouble_ticket
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+
+      - JWT_SECRET=mySecretKeyForJWTTokenGenerationThatIsAtLeast256BitsLong12345
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    networks:
+      - trouble-ticket-network
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres
+    environment:
+      - POSTGRES_DB=trouble_ticket
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d trouble_ticket"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - trouble-ticket-network
+    restart: unless-stopped
+
+
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@example.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+      - PGADMIN_CONFIG_SERVER_MODE=False
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - trouble-ticket-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+  pgadmin_data:
+
+networks:
+  trouble-ticket-network:
+    driver: bridge

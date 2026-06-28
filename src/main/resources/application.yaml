@@ -1,3 +1,44 @@
 spring:
   application:
     name: ticketer
+  server:
+    port: 8080
+    servlet:
+      context-path: /api/v1
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:database/migration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, metrics, prometheus, info
+  endpoint:
+    health:
+      show-details: always
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+logging:
+  level:
+    root: INFO
+    com.example.ticketer: DEBUG
+    org.springframework.web: INFO
+    org.hibernate: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+jwt:
+  secret: mySecretKeyForJWTTokenGenerationThatIsAtLeast256BitsLong12345
+  expiration: 86400000 # 24 hrs
+
+app:
+  tenant:
+    header: X-Tenant-Id

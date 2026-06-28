@@ -1,17 +1,23 @@
 spring:
+  config:
+    activate:
+      on-profile: local
   datasource:
-    url: jdbc:h2:mem:trouble-ticket;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    driverClassName: org.h2.Driver
-    username: sa
-    password:
+    url: jdbc:postgresql://localhost:5432/trouble_ticket
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: none
+    show-sql: true
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.H2Dialect
         format_sql: true
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+# Configure Flyway for local profile
+  flyway:
+    baseline-on-migrate: true
+    locations: classpath:database/migration
+
