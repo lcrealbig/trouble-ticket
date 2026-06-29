@@ -1,10 +1,21 @@
 spring:
   application:
     name: ticketer
-  server:
-    port: 8080
-    servlet:
-      context-path: /api/v1
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/trouble_ticket
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
 management:
   endpoints:
     web:
@@ -20,21 +31,6 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
-  flyway:
-    enabled: true
-    baseline-on-migrate: true
-    locations: classpath:database/migration
-    schemas: public
-    validate-on-migrate: true
-logging:
-  level:
-    root: INFO
-    com.example.ticketer: DEBUG
-    org.springframework.web: INFO
-    org.hibernate: INFO
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
 jwt:
   secret: mySecretKeyForJWTTokenGenerationThatIsAtLeast256BitsLong12345

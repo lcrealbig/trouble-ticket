@@ -1,17 +1,18 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api/v1
 spring:
   config:
     activate:
       on-profile: local
-  datasource:
-    url: jdbc:postgresql://localhost:5432/trouble_ticket
-    username: postgres
-    password: postgres
-    driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: none
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+logging:
+  level:
+    root: INFO
+    com.example.ticketer: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate: DEBUG
+    org.flywaydb: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+

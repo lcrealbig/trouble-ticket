@@ -7,7 +7,6 @@ import com.example.ticketer.exception.TroubleTicketNotFoundException;
 import com.example.ticketer.exception.UnauthorizedException;
 import com.example.ticketer.mapper.TroubleTicketMapper;
 import com.example.ticketer.persistence.entity.TenantEntity;
-import com.example.ticketer.persistence.entity.TenantEntity;
 import com.example.ticketer.persistence.entity.TicketStatus;
 import com.example.ticketer.persistence.entity.TroubleTicketEntity;
 import com.example.ticketer.persistence.repository.TenantRepository;
@@ -15,7 +14,6 @@ import com.example.ticketer.persistence.repository.TroubleTicketRepository;
 import com.example.ticketer.security.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -63,20 +61,19 @@ public class TroubleTicketService {
     public ResponseEntity<TroubleTicketResponse> createTroubleTicket(TroubleTicketCreateRequest request) {
         var tenant = findTenantById(validateTenantContext());
         var existing = troubleTicketRepository
-                .findByExternalIdAndTenant(request.externalId(), tenant)
-                .orElse(null);
+                .findByExternalIdAndTenant(request.externalId(), tenant);
 
-        if (existing != null) {
+        if (existing.isPresent()) {
            var location = ServletUriComponentsBuilder.fromCurrentRequest()
                     .path("/{externalId}")
-                    .buildAndExpand(existing.getExternalId())
+                    .buildAndExpand(existing.get().getExternalId())
                     .toUri();
 
             log.info("Idempotent request processed: TroubleTicket with externalId={} already exists",
                     request.externalId());
             return ResponseEntity.ok()
                     .header("Location", location.toString())
-                    .body(mapper.toResponse(existing));
+                    .body(mapper.toResponse(existing.get()));
         }
 
         if (!"new".equalsIgnoreCase(request.status())) {
